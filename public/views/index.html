@@ -1,23 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-
-    <link href="../css/output.css" rel="stylesheet">
-
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-        </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D3D</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a2e; overflow: hidden; }
+    canvas { display: block; }
+    #hud {
+      position: fixed; top: 16px; left: 16px;
+      color: #a0a0c0; font-family: monospace; font-size: 13px;
+      background: rgba(0,0,0,0.5); padding: 8px 12px;
+      border-radius: 6px; border: 1px solid #333; pointer-events: none;
+    }
+  </style>
 </head>
-<body class="overflow-hidden">
+<body>
+  <div id="hud">
+    <strong style="color:#7eb8f7">D3D MVP</strong><br/>
+    Arraste o cubo para mover<br/>
+    <span id="pos-display">Pos: (0, 0, 0)</span>
+  </div>
 
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module" src="/js/main.js"></script>
 </body>
-<script type="module" src="../js/main.js"></script>
 </html>
