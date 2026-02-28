@@ -39,7 +39,7 @@ function findTokenRoot(object) {
   return null;
 }
 
-export function setupDrag(scene, camera, renderer, orbitControls, onMoveCallback) {
+export function setupDrag(scene, camera, renderer, orbitControls, onMoveCallback, onClickCallback) {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -70,6 +70,7 @@ export function setupDrag(scene, camera, renderer, orbitControls, onMoveCallback
 
       draggedToken = root;
       orbitControls.enabled = false;
+      if (onClickCallback) onClickCallback(root);
       raycaster.ray.intersectPlane(dragPlane, dragPoint);
       dragOffset.subVectors(draggedToken.position, dragPoint);
       dragOffset.y = 0;
@@ -84,7 +85,6 @@ export function setupDrag(scene, camera, renderer, orbitControls, onMoveCallback
 
     draggedToken.position.x = dragPoint.x + dragOffset.x;
     draggedToken.position.z = dragPoint.z + dragOffset.z;
-    draggedToken.position.y = 0.5;
 
     onMoveCallback(draggedToken.name, {
       x: draggedToken.position.x,
