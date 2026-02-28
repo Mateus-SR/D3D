@@ -1,12 +1,13 @@
 import { createScene } from './scene.js';
 import { createToken, removeToken, setupDrag, tokenMap } from './token.js';
 import { Network } from './network.js';
+import { loadMap, loadToken, clearMap, removeLastToken } from './loader.js';
 
 const { renderer, scene, camera, controls } = createScene();
 
 const posDisplay = document.getElementById('pos-display');
 
-// 1. Recebe o estado inicial — cria um token pra cada player já conectado
+// --- Rede ---
 Network.onSync((data) => {
   data.players.forEach((playerData) => {
     createToken(scene, playerData);
@@ -14,19 +15,14 @@ Network.onSync((data) => {
   console.log(`Meu ID: ${Network.myId}`);
 });
 
-// 2. Novo player entrou — cria o token dele
 Network.onPlayerJoined((playerData) => {
   createToken(scene, playerData);
-  console.log(`[+] Player entrou: ${playerData.id}`);
 });
 
-// 3. Player saiu — remove o token dele
 Network.onPlayerLeft((playerId) => {
   removeToken(scene, playerId);
-  console.log(`[-] Player saiu: ${playerId}`);
 });
 
-// 4. Outro player moveu um token — atualiza posição na cena
 Network.onTokenMoved((data) => {
   const token = tokenMap.get(data.id);
   if (token) {
@@ -34,14 +30,50 @@ Network.onTokenMoved((data) => {
   }
 });
 
-// 5. Drag local — envia pra rede e atualiza o HUD
+// --- Drag ---
 setupDrag(scene, camera, renderer, controls, (id, position) => {
   Network.emitTokenMove(id, position);
   posDisplay.textContent =
     `Pos: (${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)})`;
 });
 
-// Loop de renderização
+// --- Botões da Toolbar ---
+const inputMap   = document.getElementById('input-map');
+const inputToken = document.getElementById('input-token');
+
+document.getElementById('btn-import-map').addEventListener('click', () => {
+  inputMap.click();
+});
+
+document.getElementById('btn-import-token').addEventListener('click', () => {
+  inputToken.click();
+});
+
+document.getElementById('btn-remove-token').addEventListener('click', () => {
+  removeLastToken(scene);
+});
+
+document.getElementById('btn-clear-map').addEventListener('click', () => {
+  clearMap(scene);
+});
+
+inputMap.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    loadMap(scene, file);
+    inputMap.value = ''; // permite reimportar o mesmo arquivo
+  }
+});
+
+inputToken.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    loadToken(scene, file);
+    inputToken.value = '';
+  }
+});
+
+// --- Loop ---
 function animate() {
   requestAnimationFrame(animate);
   controls.update();

@@ -3,25 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>D3D</title>
+  <title>D3D — RPG Forge 3D</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #1a1a2e; overflow: hidden; }
     canvas { display: block; }
+
     #hud {
       position: fixed; top: 16px; left: 16px;
       color: #a0a0c0; font-family: monospace; font-size: 13px;
       background: rgba(0,0,0,0.5); padding: 8px 12px;
       border-radius: 6px; border: 1px solid #333; pointer-events: none;
     }
+
+    #toolbar {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 12px;
+    }
+
+    .btn {
+      background: #16213e; color: #a0c4ff;
+      border: 1px solid #2a4a8a; border-radius: 8px;
+      padding: 10px 20px; font-family: monospace; font-size: 13px;
+      cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #1a3a6e; border-color: #4a8aff; color: #fff;
+    }
+
+    .btn.danger {
+      color: #ff6b6b; border-color: #8a2a2a;
+    }
+
+    .btn.danger:hover {
+      background: #3e1616; border-color: #ff4444;
+    }
+
+    #loading {
+      display: none;
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #7eb8f7; font-family: monospace; font-size: 16px;
+      background: rgba(0,0,0,0.8); padding: 20px 32px;
+      border-radius: 10px; border: 1px solid #2a4a8a;
+    }
   </style>
 </head>
 <body>
+
   <div id="hud">
     <strong style="color:#7eb8f7">D3D MVP</strong><br/>
-    Arraste o cubo para mover<br/>
     <span id="pos-display">Pos: (0, 0, 0)</span>
   </div>
+
+  <!-- Toolbar central -->
+  <div id="toolbar">
+    <button class="btn" id="btn-import-map">🗺️ Importar Mapa</button>
+    <button class="btn" id="btn-import-token">🧙 Importar Token</button>
+    <button class="btn danger" id="btn-remove-token">❌ Remover Token</button>
+    <button class="btn danger" id="btn-clear-map">🗑️ Limpar Mapa</button>
+  </div>
+
+  <div id="loading">⏳ Carregando modelo...</div>
+
+  <!-- Inputs de arquivo ocultos -->
+  <input type="file" id="input-map" accept=".glb,.gltf" style="display:none" />
+  <input type="file" id="input-token" accept=".glb,.gltf" style="display:none" />
 
   <script src="/socket.io/socket.io.js"></script>
 

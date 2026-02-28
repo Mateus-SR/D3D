@@ -22,9 +22,21 @@ export function removeToken(scene, playerId) {
   const token = tokenMap.get(playerId);
   if (!token) return;
   scene.remove(token);
-  token.geometry.dispose();
-  token.material.dispose();
+  token.geometry?.dispose();
+  token.material?.dispose();
   tokenMap.delete(playerId);
+}
+
+// Sobe na hierarquia do objeto até achar a raiz que está no tokenMap
+function findTokenRoot(object) {
+  let current = object;
+  while (current) {
+    for (const [id, token] of tokenMap.entries()) {
+      if (token === current) return token;
+    }
+    current = current.parent;
+  }
+  return null;
 }
 
 export function setupDrag(scene, camera, renderer, orbitControls, onMoveCallback) {
@@ -45,10 +57,18 @@ export function setupDrag(scene, camera, renderer, orbitControls, onMoveCallback
   function onPointerDown(event) {
     getPointer(event);
     raycaster.setFromCamera(pointer, camera);
+
     const allTokens = Array.from(tokenMap.values());
-    const hits = raycaster.intersectObjects(allTokens);
+
+    // true = checa filhos recursivamente (essencial para .glb)
+    const hits = raycaster.intersectObjects(allTokens, true);
+
     if (hits.length > 0) {
-      draggedToken = hits[0].object;
+      // Sobe na hierarquia para achar a raiz do token
+      const root = findTokenRoot(hits[0].object);
+      if (!root) return;
+
+      draggedToken = root;
       orbitControls.enabled = false;
       raycaster.ray.intersectPlane(dragPlane, dragPoint);
       dragOffset.subVectors(draggedToken.position, dragPoint);
@@ -61,9 +81,11 @@ export function setupDrag(scene, camera, renderer, orbitControls, onMoveCallback
     getPointer(event);
     raycaster.setFromCamera(pointer, camera);
     raycaster.ray.intersectPlane(dragPlane, dragPoint);
+
     draggedToken.position.x = dragPoint.x + dragOffset.x;
     draggedToken.position.z = dragPoint.z + dragOffset.z;
     draggedToken.position.y = 0.5;
+
     onMoveCallback(draggedToken.name, {
       x: draggedToken.position.x,
       y: draggedToken.position.y,
