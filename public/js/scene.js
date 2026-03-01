@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { tokenMap } from './token.js';
 
 export function createScene() {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -55,5 +56,16 @@ export function createScene() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  return { renderer, scene, camera, controls };
+  // Billboard: faz sprites 2D sempre olharem pra câmera
+  // Chamado a cada frame pelo loop de animação
+  function updateBillboards() {
+    for (const [id, token] of tokenMap.entries()) {
+      // Só aplica em sprites 2D (PlaneGeometry), não nos cubos
+      if (token.geometry && token.geometry.type === 'PlaneGeometry') {
+        token.quaternion.copy(camera.quaternion);
+      }
+    }
+  }
+
+  return { renderer, scene, camera, controls, updateBillboards };
 }

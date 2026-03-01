@@ -3,7 +3,7 @@ import { createToken, removeToken, setupDrag, tokenMap } from './token.js';
 import { Network } from './network.js';
 import { loadMap, loadToken, clearMap, removeLastToken } from './loader.js';
 
-const { renderer, scene, camera, controls } = createScene();
+const { renderer, scene, camera, controls, updateBillboards } = createScene();
 
 const posDisplay = document.getElementById('pos-display');
 const transformPanel = document.getElementById('transform-panel');
@@ -112,6 +112,7 @@ inputToken.addEventListener('change', (e) => {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+  updateBillboards();
   renderer.render(scene, camera);
 }
 

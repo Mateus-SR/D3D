@@ -71,42 +71,43 @@ export function loadToken(scene, file) {
   const url = URL.createObjectURL(file);
   showLoading();
 
-  loader.load(
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load(
     url,
-    (gltf) => {
-      const model = gltf.scene;
+    (texture) => {
+      // Mantém proporção da imagem original
+      const aspect = texture.image.width / texture.image.height;
+      const height = 1.8;
+      const width = height * aspect;
 
-      // Normaliza para 1.8 unidades de altura (tamanho de personagem)
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 1.8 / maxDim;
-      model.scale.setScalar(scale);
-
-      // Reposiciona no chão após escala
-      const box2 = new THREE.Box3().setFromObject(model);
-      const bottom = box2.min.y;
-      model.position.set(0, -bottom, 0);
-
-      model.traverse((child) => {
-        if (child.isMesh) child.castShadow = true;
+      const geometry = new THREE.PlaneGeometry(width, height);
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,  // respeita o fundo transparente do PNG
+        alphaTest: 0.1,     // descarta pixels quase transparentes
+        side: THREE.DoubleSide
       });
 
-      const tokenId = 'token-' + Date.now();
-      model.name = tokenId;
+      const sprite = new THREE.Mesh(geometry, material);
 
-      scene.add(model);
-      tokenMap.set(tokenId, model);
+      // Posiciona no centro da cena em pé no chão
+      sprite.position.set(0, height / 2, 0);
+
+      const tokenId = 'token-' + Date.now();
+      sprite.name = tokenId;
+
+      scene.add(sprite);
+      tokenMap.set(tokenId, sprite);
 
       hideLoading();
       URL.revokeObjectURL(url);
-      console.log('[Loader] Token carregado:', file.name, '| ID:', tokenId);
+      console.log('[Loader] Token 2D carregado:', file.name, '| ID:', tokenId);
     },
     undefined,
     (error) => {
       hideLoading();
-      console.error('[Loader] Erro ao carregar token:', error);
-      alert('Erro ao carregar o token. Verifique se o arquivo é um .glb válido.');
+      console.error('[Loader] Erro ao carregar token 2D:', error);
+      alert('Erro ao carregar a imagem. Verifique se é um PNG válido.');
     }
   );
 }
