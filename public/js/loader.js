@@ -92,6 +92,18 @@ export function loadToken(scene, file) {
 
       // Posiciona no centro da cena em pé no chão
       sprite.position.set(0, height / 2, 0);
+    // Sombra em cápsula achatada embaixo do sprite
+    const shadowGeo = new THREE.CircleGeometry(width * 0.25, 32);
+const shadowMat = new THREE.MeshBasicMaterial({
+  color: 0x000000,
+  transparent: true,
+  opacity: 0.25,
+  depthWrite: false
+});
+const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.set(0, -height / 2 + 0.01, 0);
+sprite.add(shadow);
 
       const tokenId = 'token-' + Date.now();
       sprite.name = tokenId;
