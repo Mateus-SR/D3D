@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { createScene } from './scene.js';
 import { createToken, removeToken, setupDrag, tokenMap } from './token.js';
 import { Network } from './network.js';
@@ -10,6 +11,8 @@ const transformPanel = document.getElementById('transform-panel');
 const inputX = document.getElementById('input-x');
 const inputY = document.getElementById('input-y');
 const inputZ = document.getElementById('input-z');
+const inputRotY = document.getElementById('input-rot-y');
+const inputScale = document.getElementById('input-scale');
 
 let selectedToken = null;
 
@@ -30,16 +33,16 @@ function updatePanelValues() {
   inputX.value = selectedToken.position.x.toFixed(2);
   inputY.value = selectedToken.position.y.toFixed(2);
   inputZ.value = selectedToken.position.z.toFixed(2);
+  inputRotY.value = THREE.MathUtils.radToDeg(selectedToken.rotation.y).toFixed(0);
+  inputScale.value = selectedToken.scale.x.toFixed(2);
 }
 
 // Quando o usuário edita um campo X, Y ou Z
 function onAxisInput() {
   if (!selectedToken) return;
-
   selectedToken.position.x = parseFloat(inputX.value) || 0;
   selectedToken.position.y = parseFloat(inputY.value) || 0;
   selectedToken.position.z = parseFloat(inputZ.value) || 0;
-
   Network.emitTokenMove(selectedToken.name, {
     x: selectedToken.position.x,
     y: selectedToken.position.y,
@@ -47,9 +50,29 @@ function onAxisInput() {
   });
 }
 
+function onRotationInput() {
+  if (!selectedToken) return;
+  const rad = THREE.MathUtils.degToRad(parseFloat(inputRotY.value) || 0);
+  // Sprite 2D — salva no userData para o billboard respeitar
+  if (selectedToken.geometry && selectedToken.geometry.type === 'PlaneGeometry') {
+    selectedToken.userData.rotationY = rad;
+  } else {
+    // Cubo ou .glb — rotaciona diretamente
+    selectedToken.rotation.y = rad;
+  }
+}
+
+function onScaleInput() {
+  if (!selectedToken) return;
+  const s = parseFloat(inputScale.value) || 1;
+  selectedToken.scale.set(s, s, s);
+}
+
 inputX.addEventListener('input', onAxisInput);
 inputY.addEventListener('input', onAxisInput);
 inputZ.addEventListener('input', onAxisInput);
+inputRotY.addEventListener('input', onRotationInput);
+inputScale.addEventListener('input', onScaleInput);
 
 document.getElementById('btn-deselect').addEventListener('click', deselectToken);
 

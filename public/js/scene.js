@@ -59,13 +59,15 @@ export function createScene() {
   // Billboard: faz sprites 2D sempre olharem pra câmera
   // Chamado a cada frame pelo loop de animação
   function updateBillboards() {
-    for (const [id, token] of tokenMap.entries()) {
-      // Só aplica em sprites 2D (PlaneGeometry), não nos cubos
-      if (token.geometry && token.geometry.type === 'PlaneGeometry') {
-        token.quaternion.copy(camera.quaternion);
-      }
+  for (const [id, token] of tokenMap.entries()) {
+    if (token.geometry && token.geometry.type === 'PlaneGeometry') {
+      // Pega a rotação Y definida pelo usuário e aplica junto com o billboard
+      const userRotY = token.userData.rotationY || 0;
+      token.quaternion.copy(camera.quaternion);
+      token.rotateY(userRotY);
     }
   }
+}
 
   return { renderer, scene, camera, controls, updateBillboards };
 }

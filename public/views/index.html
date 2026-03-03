@@ -72,10 +72,17 @@
   </div>
 
   <div style="display:flex; flex-direction:column; gap:8px;">
-    <label>X: <input id="input-x" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
-    <label>Y: <input id="input-y" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
-    <label>Z: <input id="input-z" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
-  </div>
+   <div style="color:#7eb8f7; margin-bottom:2px;">📍 Posição</div>
+   <label>X: <input id="input-x" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+   <label>Y: <input id="input-y" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+   <label>Z: <input id="input-z" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+
+   <div style="color:#7eb8f7; margin-top:6px; margin-bottom:2px;">🔄 Rotação</div>
+   <label>Y: <input id="input-rot-y" type="number" step="15" min="-180" max="180" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+
+   <div style="color:#7eb8f7; margin-top:6px; margin-bottom:2px;">📐 Escala</div>
+   <label>S: <input id="input-scale" type="number" step="0.1" min="0.1" max="10" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+</div>
 
   <button id="btn-deselect" style="
     margin-top:10px; width:100%;
