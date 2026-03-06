@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D3D — Entrar na Mesa</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d1a;
+      color: #a0c4ff;
+      font-family: monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: #7eb8f7;
+      letter-spacing: 4px;
+    }
+
+    .logo span {
+      color: #4a8aff;
+    }
+
+    .card {
+      background: #16213e;
+      border: 1px solid #2a4a8a;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      color: #7eb8f7;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    input {
+      background: #0d0d1a;
+      border: 1px solid #2a4a8a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: monospace;
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: #4a8aff;
+    }
+
+    input::placeholder {
+      color: #445;
+    }
+
+    input.code {
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    button {
+      background: #1a3a6e;
+      border: 1px solid #4a8aff;
+      border-radius: 8px;
+      padding: 12px;
+      color: #a0c4ff;
+      font-family: monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #2a5aae;
+      color: #fff;
+    }
+
+    button.primary {
+      background: #4a8aff;
+      color: #fff;
+      border-color: #7eb8f7;
+    }
+
+    button.primary:hover {
+      background: #6aaaff;
+    }
+
+    .divider {
+      text-align: center;
+      color: #334;
+      font-size: 12px;
+    }
+
+    #error-msg {
+      display: none;
+      color: #ff6b6b;
+      font-size: 13px;
+      text-align: center;
+      padding: 8px;
+      background: rgba(255,0,0,0.1);
+      border-radius: 6px;
+      border: 1px solid #8a2a2a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="logo">D<span>3</span>D</div>
+
+    <!-- Seu nome -->
+    <div class="card">
+      <h2>👤 Seu Nome</h2>
+      <input type="text" id="input-name" placeholder="Como quer ser chamado?" maxlength="20" />
+    </div>
+
+    <!-- Criar sala -->
+    <div class="card">
+      <h2>🎲 Criar Mesa</h2>
+      <p style="font-size:12px; color:#556;">Você será o Mestre. Um código será gerado para compartilhar com os jogadores.</p>
+      <button class="primary" id="btn-create">Criar Mesa</button>
+    </div>
+
+    <div class="divider">— ou —</div>
+
+    <!-- Entrar numa sala -->
+    <div class="card">
+      <h2>🚪 Entrar numa Mesa</h2>
+      <input type="text" id="input-code" class="code" placeholder="XXXXX" maxlength="5" />
+      <button id="btn-join">Entrar</button>
+    </div>
+
+    <div id="error-msg"></div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+<script>
+  const inputName = document.getElementById('input-name');
+  const inputCode = document.getElementById('input-code');
+  const btnCreate = document.getElementById('btn-create');
+  const btnJoin = document.getElementById('btn-join');
+  const errorMsg = document.getElementById('error-msg');
+
+  inputCode.addEventListener('input', () => {
+    inputCode.value = inputCode.value.toUpperCase();
+  });
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+    setTimeout(() => errorMsg.style.display = 'none', 3000);
+  }
+
+  function getName() {
+    return inputName.value.trim() || 'Anônimo';
+  }
+
+  function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+  }
+
+  // Criar sala — gera código localmente e redireciona
+  btnCreate.addEventListener('click', () => {
+    const code = generateCode();
+    const params = new URLSearchParams({
+      sala: code,
+      nome: getName(),
+      master: 'true'
+    });
+    window.location.href = `/views/index.html?${params}`;
+  });
+
+  // Entrar numa sala
+  btnJoin.addEventListener('click', () => {
+    const code = inputCode.value.trim();
+    if (code.length !== 5) {
+      showError('O código deve ter 5 caracteres.');
+      return;
+    }
+    const params = new URLSearchParams({
+      sala: code,
+      nome: getName(),
+      master: 'false'
+    });
+    window.location.href = `/views/index.html?${params}`;
+  });
+</script>
+</body>
+</html>

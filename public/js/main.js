@@ -77,9 +77,16 @@ inputScale.addEventListener('input', onScaleInput);
 document.getElementById('btn-deselect').addEventListener('click', deselectToken);
 
 // --- Rede ---
+Network.init();
+
+Network.onRoomError((msg) => {
+  alert(msg);
+  window.location.href = '/views/lobby.html';
+});
+
 Network.onSync((data) => {
   data.players.forEach((playerData) => createToken(scene, playerData));
-  console.log(`Meu ID: ${Network.myId}`);
+  console.log(`Meu ID: ${Network.myId} | Sala: ${Network.roomCode}`);
 });
 
 Network.onPlayerJoined((playerData) => createToken(scene, playerData));

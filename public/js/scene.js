@@ -8,6 +8,7 @@ export function createScene() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.bias = -0.0001;
   document.body.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -33,10 +34,11 @@ export function createScene() {
   dirLight.shadow.mapSize.height = 1024;
   dirLight.shadow.camera.near = 0.5;
   dirLight.shadow.camera.far = 50;
-  dirLight.shadow.camera.left = -10;
-  dirLight.shadow.camera.right = 10;
-  dirLight.shadow.camera.top = 10;
-  dirLight.shadow.camera.bottom = -10;
+  dirLight.shadow.camera.left = -20;
+  dirLight.shadow.camera.right = 20;
+  dirLight.shadow.camera.top = 20;
+  dirLight.shadow.camera.bottom = -20;
+  dirLight.shadow.bias = -0.0005;
   scene.add(dirLight);
 
   const floorGeo = new THREE.PlaneGeometry(20, 20);
@@ -61,10 +63,23 @@ export function createScene() {
   function updateBillboards() {
   for (const [id, token] of tokenMap.entries()) {
     if (token.geometry && token.geometry.type === 'PlaneGeometry') {
-      // Pega a rotação Y definida pelo usuário e aplica junto com o billboard
       const userRotY = token.userData.rotationY || 0;
-      token.quaternion.copy(camera.quaternion);
-      token.rotateY(userRotY);
+      const angleY = Math.atan2(
+        camera.position.x - token.position.x,
+        camera.position.z - token.position.z
+      );
+
+      const camHeight = camera.position.y - token.position.y;
+      const camDist = Math.sqrt(
+        Math.pow(camera.position.x - token.position.x, 2) +
+        Math.pow(camera.position.z - token.position.z, 2)
+      );
+      const polarAngle = Math.atan2(camDist, camHeight);
+
+      // Máximo de 15 graus de inclinação (0.26 radianos)
+      const tiltX = Math.min(0.26, Math.max(0, (Math.PI / 2 - polarAngle) * 0.35));
+
+      token.rotation.set(-tiltX, angleY + userRotY, 0);
     }
   }
 }
