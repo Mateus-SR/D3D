@@ -99,6 +99,8 @@ Network.onRoomError((msg) => {
 Network.onSync((data) => {
   data.players.forEach((playerData) => createToken(scene, playerData));
   console.log(`Meu ID: ${Network.myId} | Sala: ${Network.roomCode}`);
+  const roomCodeEl = document.getElementById('room-code');
+  if (roomCodeEl) roomCodeEl.textContent = `🎲 ${Network.roomCode}`;
 });
 
 Network.onPlayerJoined((playerData) => createToken(scene, playerData));

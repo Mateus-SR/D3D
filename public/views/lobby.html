@@ -195,27 +195,23 @@
   // Criar sala — gera código localmente e redireciona
   btnCreate.addEventListener('click', () => {
     const code = generateCode();
-    const params = new URLSearchParams({
-      sala: code,
-      nome: getName(),
-      master: 'true'
-    });
-    window.location.href = `/views/index.html?${params}`;
-  });
+    sessionStorage.setItem('d3d_nome', getName());
+    sessionStorage.setItem('d3d_master', 'true');
+    sessionStorage.setItem('d3d_sala', code);
+    window.location.href = `/views/index.html`;
+ });
 
   // Entrar numa sala
   btnJoin.addEventListener('click', () => {
-    const code = inputCode.value.trim();
-    if (code.length !== 5) {
-      showError('O código deve ter 5 caracteres.');
-      return;
-    }
-    const params = new URLSearchParams({
-      sala: code,
-      nome: getName(),
-      master: 'false'
-    });
-    window.location.href = `/views/index.html?${params}`;
+   const code = inputCode.value.trim();
+   if (code.length !== 5) {
+    showError('O código deve ter 5 caracteres.');
+    return;
+   }
+   sessionStorage.setItem('d3d_nome', getName());
+   sessionStorage.setItem('d3d_master', 'false');
+   sessionStorage.setItem('d3d_sala', code);
+   window.location.href = `/views/index.html`;
   });
 </script>
 </body>

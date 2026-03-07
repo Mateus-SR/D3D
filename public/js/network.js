@@ -1,7 +1,5 @@
 const socket = io();
 
-const urlParams = new URLSearchParams(window.location.search);
-
 export const Network = {
   myId: null,
   roomCode: null,
@@ -9,9 +7,9 @@ export const Network = {
   isMaster: false,
 
   init() {
-    this.roomCode = urlParams.get('sala');
-    this.playerName = urlParams.get('nome') || 'Anônimo';
-    this.isMaster = urlParams.get('master') === 'true';
+    this.roomCode = sessionStorage.getItem('d3d_sala');
+    this.playerName = sessionStorage.getItem('d3d_nome') || 'Anônimo';
+    this.isMaster = sessionStorage.getItem('d3d_master') === 'true';
 
     if (!this.roomCode) {
       window.location.href = '/views/lobby.html';
