@@ -18,24 +18,14 @@ export const Network = {
       return;
     }
 
-    if (this.isMaster) {
-      // Mestre cria a sala
-      socket.emit('room:create', this.playerName);
-    } else {
-      // Jogador entra na sala
-      socket.emit('room:join', {
-        code: this.roomCode,
-        playerName: this.playerName
-      });
-    }
+    socket.emit('room:enter', {
+      code: this.roomCode,
+      playerName: this.playerName,
+      isMaster: this.isMaster
+    });
   },
 
   onSync(callback) {
-    socket.on('room:created', (data) => {
-      this.myId = socket.id;
-      this.roomCode = data.code;
-      callback(data);
-    });
     socket.on('room:joined', (data) => {
       this.myId = socket.id;
       this.roomCode = data.code;
@@ -64,7 +54,9 @@ export const Network = {
       id,
       x: position.x,
       y: position.y,
-      z: position.z
+      z: position.z,
+      rotY: position.rotY,
+      scale: position.scale
     });
   }
 };

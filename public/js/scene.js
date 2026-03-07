@@ -68,18 +68,21 @@ export function createScene() {
         camera.position.x - token.position.x,
         camera.position.z - token.position.z
       );
-
       const camHeight = camera.position.y - token.position.y;
       const camDist = Math.sqrt(
         Math.pow(camera.position.x - token.position.x, 2) +
         Math.pow(camera.position.z - token.position.z, 2)
       );
       const polarAngle = Math.atan2(camDist, camHeight);
-
-      // Máximo de 15 graus de inclinação (0.26 radianos)
       const tiltX = Math.min(0.26, Math.max(0, (Math.PI / 2 - polarAngle) * 0.35));
-
       token.rotation.set(-tiltX, angleY + userRotY, 0);
+
+      // Sombra acompanha o token
+      if (token.userData.shadow) {
+        token.userData.shadow.position.x = token.position.x;
+        token.userData.shadow.position.z = token.position.z;
+        token.userData.shadow.position.y = 0.02;
+      }
     }
   }
 }

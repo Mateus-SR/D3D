@@ -53,19 +53,31 @@ function onAxisInput() {
 function onRotationInput() {
   if (!selectedToken) return;
   const rad = THREE.MathUtils.degToRad(parseFloat(inputRotY.value) || 0);
-  // Sprite 2D — salva no userData para o billboard respeitar
   if (selectedToken.geometry && selectedToken.geometry.type === 'PlaneGeometry') {
     selectedToken.userData.rotationY = rad;
   } else {
-    // Cubo ou .glb — rotaciona diretamente
     selectedToken.rotation.y = rad;
   }
+  Network.emitTokenMove(selectedToken.name, {
+    x: selectedToken.position.x,
+    y: selectedToken.position.y,
+    z: selectedToken.position.z,
+    rotY: parseFloat(inputRotY.value) || 0,
+    scale: parseFloat(inputScale.value) || 1
+  });
 }
 
 function onScaleInput() {
   if (!selectedToken) return;
   const s = parseFloat(inputScale.value) || 1;
   selectedToken.scale.set(s, s, s);
+  Network.emitTokenMove(selectedToken.name, {
+    x: selectedToken.position.x,
+    y: selectedToken.position.y,
+    z: selectedToken.position.z,
+    rotY: parseFloat(inputRotY.value) || 0,
+    scale: s
+  });
 }
 
 inputX.addEventListener('input', onAxisInput);
@@ -95,11 +107,17 @@ Network.onPlayerLeft((playerId) => removeToken(scene, playerId));
 
 Network.onTokenMoved((data) => {
   const token = tokenMap.get(data.id);
-  if (token) {
-    token.position.set(data.x, data.y, data.z);
-    // Atualiza painel se esse token estiver selecionado
-    if (selectedToken && selectedToken.name === data.id) {
-      updatePanelValues();
+  if (!token) return;
+  token.position.set(data.x, data.y, data.z);
+  if (data.scale !== undefined) {
+    token.scale.set(data.scale, data.scale, data.scale);
+  }
+  if (data.rotY !== undefined) {
+    const rad = THREE.MathUtils.degToRad(data.rotY);
+    if (token.geometry && token.geometry.type === 'PlaneGeometry') {
+      token.userData.rotationY = rad;
+    } else {
+      token.rotation.y = rad;
     }
   }
 });

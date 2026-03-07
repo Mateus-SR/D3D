@@ -10,7 +10,6 @@ const io = new Server(httpServer, { cors: { origin: '*' } });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Map de salas: chave = código da sala, valor = { players: Map }
 const rooms = new Map();
 
 function generateRoomCode() {
@@ -24,9 +23,14 @@ function generateRoomCode() {
 
 function getOrCreateRoom(code) {
   if (!rooms.has(code)) {
-    rooms.set(code, { players: new Map() });
+    rooms.set(code, { players: new Map(), closeTimeout: null });
   }
   return rooms.get(code);
+}
+
+function randomColor() {
+  const colors = [0xe74c3c, 0x2ecc71, 0x3498db, 0xf39c12, 0x9b59b6, 0x1abc9c, 0xe67e22, 0xe91e63];
+  return colors[Math.floor(Math.random() * colors.length)];
 }
 
 io.on('connection', (socket) => {
@@ -34,41 +38,25 @@ io.on('connection', (socket) => {
   let currentRoom = null;
   let currentName = null;
 
-  // 1. Criar sala
-  socket.on('room:create', (playerName) => {
-    let code = generateRoomCode();
-    while (rooms.has(code)) code = generateRoomCode(); // garante código único
+  // Evento único de entrada — cria ou entra na sala
+  socket.on('room:enter', ({ code, playerName, isMaster }) => {
+    if (!rooms.has(code)) {
+      if (isMaster) {
+        getOrCreateRoom(code);
+        console.log(`[Sala ${code}] Criada por ${playerName}`);
+      } else {
+        socket.emit('room:error', 'Sala não encontrada.');
+        return;
+      }
+    }
 
-    const room = getOrCreateRoom(code);
-    const player = {
-      id: socket.id,
-      name: playerName || 'Mestre',
-      color: randomColor(),
-      x: 0, y: 0.5, z: 0,
-      isMaster: true
-    };
-
-    room.players.set(socket.id, player);
-    socket.join(code);
-    currentRoom = code;
-    currentName = playerName;
-
-    socket.emit('room:created', {
-      code,
-      myId: socket.id,
-      players: Array.from(room.players.values())
-    });
-
-    console.log(`[Sala ${code}] Criada por ${playerName}`);
-  });
-
-  // 2. Entrar numa sala existente
-  socket.on('room:join', ({ code, playerName }) => {
     const room = rooms.get(code);
 
-    if (!room) {
-      socket.emit('room:error', 'Sala não encontrada.');
-      return;
+    // Cancela timer de fechamento se existir
+    if (room.closeTimeout) {
+      clearTimeout(room.closeTimeout);
+      room.closeTimeout = null;
+      console.log(`[Sala ${code}] Timer de fechamento cancelado`);
     }
 
     const player = {
@@ -78,7 +66,7 @@ io.on('connection', (socket) => {
       x: (Math.random() - 0.5) * 6,
       y: 0.5,
       z: (Math.random() - 0.5) * 6,
-      isMaster: false
+      isMaster
     };
 
     room.players.set(socket.id, player);
@@ -86,53 +74,17 @@ io.on('connection', (socket) => {
     currentRoom = code;
     currentName = playerName;
 
-    // Manda estado atual para o novo jogador
     socket.emit('room:joined', {
       code,
       myId: socket.id,
       players: Array.from(room.players.values())
     });
 
-    // Avisa os outros que alguém entrou
     socket.to(code).emit('player:joined', player);
     console.log(`[Sala ${code}] ${playerName} entrou`);
   });
 
-// 2.5. Reconectar na sala após redirect
-socket.on('room:rejoin', ({ code, playerName }) => {
-  const room = rooms.get(code);
-
-  if (!room) {
-    socket.emit('room:error', 'Sala não encontrada.');
-   return;
-  }
-
-  const player = {
-    id: socket.id,
-    name: playerName || 'Jogador',
-    color: randomColor(),
-    x: (Math.random() - 0.5) * 6,
-    y: 0.5,
-    z: (Math.random() - 0.5) * 6,
-    isMaster: false
-  };
-
-  room.players.set(socket.id, player);
-  socket.join(code);
-  currentRoom = code;
-  currentName = playerName;
-
-  socket.emit('room:rejoined', {
-    code,
-    myId: socket.id,
-    players: Array.from(room.players.values())
-  });
-
-  socket.to(code).emit('player:joined', player);
-  console.log(`[Sala ${code}] ${playerName} reconectou`);
-});
-
-  // 3. Mover token
+  // Mover token
   socket.on('token:move', (data) => {
     if (!currentRoom) return;
     const room = rooms.get(currentRoom);
@@ -148,7 +100,7 @@ socket.on('room:rejoin', ({ code, playerName }) => {
     socket.to(currentRoom).emit('token:moved', data);
   });
 
-  // 4. Desconexão
+  // Desconexão
   socket.on('disconnect', () => {
     if (!currentRoom) return;
     const room = rooms.get(currentRoom);
@@ -157,20 +109,18 @@ socket.on('room:rejoin', ({ code, playerName }) => {
     room.players.delete(socket.id);
     io.to(currentRoom).emit('player:left', socket.id);
 
-    // Remove sala se vazia
+    // Sala vazia — fecha em 10 minutos
     if (room.players.size === 0) {
-      rooms.delete(currentRoom);
-      console.log(`[Sala ${currentRoom}] Removida (vazia)`);
+      room.closeTimeout = setTimeout(() => {
+        rooms.delete(currentRoom);
+        console.log(`[Sala ${currentRoom}] Removida após inatividade`);
+      }, 10 * 60 * 1000);
+      console.log(`[Sala ${currentRoom}] Vazia — fechando em 10 minutos`);
     }
 
     console.log(`[-] ${currentName} saiu da sala ${currentRoom}`);
   });
 });
-
-function randomColor() {
-  const colors = [0xe74c3c, 0x2ecc71, 0x3498db, 0xf39c12, 0x9b59b6, 0x1abc9c, 0xe67e22, 0xe91e63];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
