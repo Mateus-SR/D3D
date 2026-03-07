@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 export const tokenMap = new Map();
 
@@ -13,6 +14,25 @@ export function createToken(scene, playerData) {
   token.position.set(playerData.x, playerData.y, playerData.z);
   token.castShadow = true;
   token.name = playerData.id;
+
+  // Label com nome do player
+  const labelDiv = document.createElement('div');
+  labelDiv.textContent = playerData.name || 'Jogador';
+  labelDiv.style.cssText = `
+    background: rgba(0,0,0,0.6);
+    color: #a0c4ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    border: 1px solid #2a4a8a;
+    white-space: nowrap;
+    pointer-events: none;
+  `;
+  const label = new CSS2DObject(labelDiv);
+  label.position.set(0, 0.8, 0); // acima do cubo
+  token.add(label);
+
   scene.add(token);
   tokenMap.set(playerData.id, token);
   return token;
@@ -21,6 +41,14 @@ export function createToken(scene, playerData) {
 export function removeToken(scene, playerId) {
   const token = tokenMap.get(playerId);
   if (!token) return;
+
+  // Remove labels CSS2D filhos
+  token.traverse((child) => {
+    if (child.isCSS2DObject) {
+      child.element.remove();
+    }
+  });
+
   scene.remove(token);
   token.geometry?.dispose();
   token.material?.dispose();

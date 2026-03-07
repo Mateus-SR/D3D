@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { tokenMap } from './token.js';
 
 export function createScene() {
@@ -10,6 +11,13 @@ export function createScene() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.shadowMap.bias = -0.0001;
   document.body.appendChild(renderer.domElement);
+  // Renderer de labels HTML 2D
+  const labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.domElement.style.position = 'fixed';
+  labelRenderer.domElement.style.top = '0';
+  labelRenderer.domElement.style.pointerEvents = 'none';
+  document.body.appendChild(labelRenderer.domElement); 
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a1a2e);
@@ -56,6 +64,7 @@ export function createScene() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
   });
 
   // Billboard: faz sprites 2D sempre olharem pra câmera
@@ -87,5 +96,5 @@ export function createScene() {
   }
 }
 
-  return { renderer, scene, camera, controls, updateBillboards };
+  return { renderer, scene, camera, controls, updateBillboards, labelRenderer };
 }

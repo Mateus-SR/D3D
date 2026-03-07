@@ -4,7 +4,7 @@ import { createToken, removeToken, setupDrag, tokenMap } from './token.js';
 import { Network } from './network.js';
 import { loadMap, loadToken, clearMap, removeLastToken } from './loader.js';
 
-const { renderer, scene, camera, controls, updateBillboards } = createScene();
+const { renderer, scene, camera, controls, updateBillboards, labelRenderer } = createScene();
 
 const posDisplay = document.getElementById('pos-display');
 const transformPanel = document.getElementById('transform-panel');
@@ -162,6 +162,7 @@ function animate() {
   controls.update();
   updateBillboards();
   renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
 }
 
 animate();
