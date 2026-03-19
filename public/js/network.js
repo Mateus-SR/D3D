@@ -43,8 +43,39 @@ export const Network = {
     socket.on('token:moved', callback);
   },
 
+  onTokenRemoved(callback) {
+    socket.on('token:removed', callback);
+  },
+
   onRoomError(callback) {
     socket.on('room:error', callback);
+  },
+
+  // --- NOVO: assets ---
+
+  // Emite mapa para a sala (base64 do arquivo .glb/.gltf)
+  emitAssetMap(base64, fileName) {
+    socket.emit('asset:map', { base64, fileName });
+  },
+
+  // Emite token para a sala (base64 do PNG ou .glb)
+  emitAssetToken(base64, fileName, tokenId) {
+    socket.emit('asset:token', { base64, fileName, tokenId });
+  },
+
+  // Emite remoção de token
+  emitTokenRemove(tokenId) {
+    socket.emit('token:remove', { tokenId });
+  },
+
+  // Recebe mapa vindo da rede
+  onAssetMap(callback) {
+    socket.on('asset:map', callback);
+  },
+
+  // Recebe token vindo da rede
+  onAssetToken(callback) {
+    socket.on('asset:token', callback);
   },
 
   emitTokenMove(id, position) {

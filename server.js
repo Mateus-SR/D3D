@@ -6,24 +6,23 @@ const path = require('path');
 const app = express();
 const httpServer = http.createServer(app);
 
-const io = new Server(httpServer, { cors: { origin: '*' } });
+const io = new Server(httpServer, {
+  cors: { origin: '*' },
+  maxHttpBufferSize: 50 * 1024 * 1024 // 50MB — para suportar .glb grandes
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = new Map();
 
-function generateRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 5; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
-
 function getOrCreateRoom(code) {
   if (!rooms.has(code)) {
-    rooms.set(code, { players: new Map(), closeTimeout: null });
+    rooms.set(code, {
+      players: new Map(),
+      closeTimeout: null,
+      currentMap: null,   // { base64, fileName }
+      tokens: new Map()   // tokenId -> { base64, fileName, tokenId, x, y, z, rotY, scale }
+    });
   }
   return rooms.get(code);
 }
@@ -38,7 +37,6 @@ io.on('connection', (socket) => {
   let currentRoom = null;
   let currentName = null;
 
-  // Evento único de entrada — cria ou entra na sala
   socket.on('room:enter', ({ code, playerName, isMaster }) => {
     if (!rooms.has(code)) {
       if (isMaster) {
@@ -52,7 +50,6 @@ io.on('connection', (socket) => {
 
     const room = rooms.get(code);
 
-    // Cancela timer de fechamento se existir
     if (room.closeTimeout) {
       clearTimeout(room.closeTimeout);
       room.closeTimeout = null;
@@ -74,17 +71,53 @@ io.on('connection', (socket) => {
     currentRoom = code;
     currentName = playerName;
 
+    // Envia estado completo — players + assets já na sala
     socket.emit('room:joined', {
       code,
       myId: socket.id,
-      players: Array.from(room.players.values())
+      players: Array.from(room.players.values()),
+      currentMap: room.currentMap || null,
+      tokens: Array.from(room.tokens.values())
     });
 
     socket.to(code).emit('player:joined', player);
     console.log(`[Sala ${code}] ${playerName} entrou`);
   });
 
-  // Mover token
+  // Mestre envia mapa — salva em RAM e rebroadcast
+  socket.on('asset:map', ({ base64, fileName }) => {
+    if (!currentRoom) return;
+    const room = rooms.get(currentRoom);
+    if (!room) return;
+
+    room.currentMap = { base64, fileName };
+    socket.to(currentRoom).emit('asset:map', { base64, fileName });
+    console.log(`[Sala ${currentRoom}] Mapa: ${fileName} (${Math.round(base64.length * 0.75 / 1024)}KB)`);
+  });
+
+  // Alguém importa token — salva e rebroadcast
+  socket.on('asset:token', ({ base64, fileName, tokenId }) => {
+    if (!currentRoom) return;
+    const room = rooms.get(currentRoom);
+    if (!room) return;
+
+    room.tokens.set(tokenId, { base64, fileName, tokenId, x: 0, y: 0.9, z: 0, rotY: 0, scale: 1 });
+    socket.to(currentRoom).emit('asset:token', { base64, fileName, tokenId });
+    console.log(`[Sala ${currentRoom}] Token: ${fileName} | ID: ${tokenId}`);
+  });
+
+  // Remover token da sala
+  socket.on('token:remove', ({ tokenId }) => {
+    if (!currentRoom) return;
+    const room = rooms.get(currentRoom);
+    if (!room) return;
+
+    room.tokens.delete(tokenId);
+    socket.to(currentRoom).emit('token:removed', { tokenId });
+    console.log(`[Sala ${currentRoom}] Token removido: ${tokenId}`);
+  });
+
+  // Mover token — atualiza posição no estado da sala
   socket.on('token:move', (data) => {
     if (!currentRoom) return;
     const room = rooms.get(currentRoom);
@@ -97,10 +130,18 @@ io.on('connection', (socket) => {
       player.z = data.z;
     }
 
+    const assetToken = room.tokens.get(data.id);
+    if (assetToken) {
+      assetToken.x = data.x;
+      assetToken.y = data.y;
+      assetToken.z = data.z;
+      if (data.rotY !== undefined) assetToken.rotY = data.rotY;
+      if (data.scale !== undefined) assetToken.scale = data.scale;
+    }
+
     socket.to(currentRoom).emit('token:moved', data);
   });
 
-  // Desconexão
   socket.on('disconnect', () => {
     if (!currentRoom) return;
     const room = rooms.get(currentRoom);
@@ -109,7 +150,6 @@ io.on('connection', (socket) => {
     room.players.delete(socket.id);
     io.to(currentRoom).emit('player:left', socket.id);
 
-    // Sala vazia — fecha em 10 minutos
     if (room.players.size === 0) {
       room.closeTimeout = setTimeout(() => {
         rooms.delete(currentRoom);
