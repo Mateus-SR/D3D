@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D3D — RPG Forge 3D</title>
+  <link rel="stylesheet" href="/css/output.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a2e; overflow: hidden; }
+    canvas { display: block; }
+
+    #hud {
+      position: fixed; top: 16px; left: 16px;
+      color: #a0a0c0; font-family: monospace; font-size: 13px;
+      background: rgba(0,0,0,0.5); padding: 8px 12px;
+      border-radius: 6px; border: 1px solid #333; pointer-events: none;
+    }
+
+    #toolbar {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 12px;
+    }
+
+    .btn {
+      background: #16213e; color: #a0c4ff;
+      border: 1px solid #2a4a8a; border-radius: 8px;
+      padding: 10px 20px; font-family: monospace; font-size: 13px;
+      cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #1a3a6e; border-color: #4a8aff; color: #fff;
+    }
+
+    .btn.danger {
+      color: #ff6b6b; border-color: #8a2a2a;
+    }
+
+    .btn.danger:hover {
+      background: #3e1616; border-color: #ff4444;
+    }
+  </style>
+</head>
+<body>
+
+<div id="hud">
+  <strong style="color:#7eb8f7">D3D MVP</strong><br/>
+  <span id="room-code" style="color:#4a8aff; letter-spacing:2px;"></span><br/>
+  <span id="pos-display">Pos: (0, 0, 0)</span>
+</div>
+
+<!-- Painel de transformação -->
+<div id="transform-panel" style="
+  display: none;
+  position: fixed; top: 16px; right: 16px;
+  background: rgba(0,0,0,0.7); border: 1px solid #2a4a8a;
+  border-radius: 8px; padding: 14px 16px;
+  font-family: monospace; font-size: 13px; color: #a0c4ff;
+  min-width: 200px;
+">
+  <div style="margin-bottom:10px; color:#7eb8f7">
+    <strong>🎯 Token Selecionado</strong>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:8px;">
+   <div style="color:#7eb8f7; margin-bottom:2px;">📍 Posição</div>
+   <label>X: <input id="input-x" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+   <label>Y: <input id="input-y" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+   <label>Z: <input id="input-z" type="number" step="0.5" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+
+   <div style="color:#7eb8f7; margin-top:6px; margin-bottom:2px;">🔄 Rotação</div>
+   <label>Y: <input id="input-rot-y" type="number" step="15" min="-180" max="180" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+
+   <div style="color:#7eb8f7; margin-top:6px; margin-bottom:2px;">📐 Escala</div>
+   <label>S: <input id="input-scale" type="number" step="0.1" min="0.1" max="10" style="width:80px; background:#16213e; border:1px solid #2a4a8a; color:#fff; border-radius:4px; padding:2px 6px;"></label>
+  </div>
+
+  <button id="btn-deselect" style="
+    margin-top:10px; width:100%;
+    background:#16213e; border:1px solid #8a2a2a;
+    color:#ff6b6b; border-radius:4px; padding:4px;
+    cursor:pointer; font-family:monospace;
+  ">✖ Desselecionar</button>
+</div>
+
+<!-- Toolbar central -->
+<div id="toolbar">
+  <button class="btn" id="btn-import-map">🗺️ Importar Mapa</button>
+  <button class="btn" id="btn-import-token">🧙 Importar Token</button>
+  <button class="btn danger" id="btn-remove-token">❌ Remover Token</button>
+  <button class="btn danger" id="btn-clear-map">🗑️ Limpar Mapa</button>
+</div>
+
+<!-- Loading — estilo completo inline -->
+<div id="loading" style="
+  display: none;
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: #7eb8f7; font-family: monospace; font-size: 15px;
+  background: rgba(0,0,0,0.85); padding: 20px 32px;
+  border-radius: 10px; border: 1px solid #2a4a8a;
+  text-align: center; z-index: 999;
+">⏳ Carregando...</div>
+
+<!-- Inputs de arquivo ocultos -->
+<input type="file" id="input-map" accept=".glb,.gltf" style="display:none" />
+<input type="file" id="input-token" accept=".png,.jpg,.jpeg,.webp,.glb,.gltf" style="display:none" />
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+    }
+  }
+</script>
+
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>

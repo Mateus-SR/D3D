@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "tailwindcss": "^4.1.18",
+    "three": "^0.182.0"
+  },
+  "devDependencies": {
+    "vite": "^7.2.7"
+  }
+}
