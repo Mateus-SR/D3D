@@ -4,6 +4,30 @@ import { createToken, removeToken, setupDrag, tokenMap } from './token.js';
 import { Network } from './network.js';
 import { loadMap, loadToken, loadMapFromBase64, loadTokenFromBase64, clearMap, removeLastToken } from './loader.js';
 
+function showToast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function addPlayerToHUD(playerData) {
+  const el = document.createElement('div');
+  el.id = 'player-hud-' + playerData.id;
+  el.style.cssText = 'display:flex; align-items:center; gap:6px; font-size:11px;';
+  const color = '#' + playerData.color.toString(16).padStart(6, '0');
+  el.innerHTML = `
+    <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+    <span style="color:#c0d4f0;">${playerData.name}</span>
+  `;
+  document.getElementById('players-list').appendChild(el);
+}
+
+function removePlayerFromHUD(playerId) {
+  document.getElementById('player-hud-' + playerId)?.remove();
+}
+
 const { renderer, scene, camera, controls, updateBillboards, labelRenderer } = createScene();
 
 const posDisplay = document.getElementById('pos-display');
@@ -98,7 +122,10 @@ Network.onRoomError((msg) => {
 // Sincronização ao entrar — recebe players + assets já na sala
 Network.onSync((data) => {
   // Cria tokens de players
-  data.players.forEach((playerData) => createToken(scene, playerData));
+  data.players.forEach((playerData) => {
+    createToken(scene, playerData);
+    addPlayerToHUD(playerData);
+  });
 
   // Atualiza HUD
   console.log(`Meu ID: ${Network.myId} | Sala: ${Network.roomCode}`);
@@ -122,8 +149,19 @@ Network.onSync((data) => {
   }
 });
 
-Network.onPlayerJoined((playerData) => createToken(scene, playerData));
-Network.onPlayerLeft((playerId) => removeToken(scene, playerId));
+Network.onPlayerJoined((playerData) => {
+  createToken(scene, playerData);
+  addPlayerToHUD(playerData);
+  showToast(`⚔️ ${playerData.name} entrou na sessão`, 'joined');
+});
+
+Network.onPlayerLeft((playerId) => {
+  const token = tokenMap.get(playerId);
+  const name = token?.userData?.playerName || 'Jogador';
+  removeToken(scene, playerId);
+  removePlayerFromHUD(playerId);
+  showToast(`🚪 ${name} saiu da sessão`, 'left');
+});
 
 Network.onTokenMoved((data) => {
   const token = tokenMap.get(data.id);
@@ -143,11 +181,13 @@ Network.onTokenMoved((data) => {
 // --- NOVO: recebe mapa vindo da rede (outro player importou) ---
 Network.onAssetMap(({ base64, fileName }) => {
   loadMapFromBase64(scene, base64, fileName);
+  showToast(`🗺️ Mapa carregado: ${fileName}`, 'asset');
 });
 
 // --- NOVO: recebe token vindo da rede (outro player importou) ---
 Network.onAssetToken(({ base64, fileName, tokenId }) => {
   loadTokenFromBase64(scene, base64, fileName, tokenId);
+  showToast(`🧙 Token: ${fileName}`, 'asset');
 });
 
 // --- NOVO: recebe remoção de token da rede ---
@@ -157,6 +197,7 @@ Network.onTokenRemoved(({ tokenId }) => {
   if (token.userData.shadow) scene.remove(token.userData.shadow);
   scene.remove(token);
   tokenMap.delete(tokenId);
+  showToast(`❌ Token removido`, 'left');
   console.log('[Network] Token removido pela rede:', tokenId);
 });
 

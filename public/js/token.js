@@ -14,6 +14,7 @@ export function createToken(scene, playerData) {
   token.position.set(playerData.x, playerData.y, playerData.z);
   token.castShadow = true;
   token.name = playerData.id;
+  token.userData.playerName = playerData.name;
 
   // Label com nome do player
   const labelDiv = document.createElement('div');

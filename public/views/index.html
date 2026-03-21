@@ -14,7 +14,7 @@
       position: fixed; top: 16px; left: 16px;
       color: #a0a0c0; font-family: monospace; font-size: 13px;
       background: rgba(0,0,0,0.5); padding: 8px 12px;
-      border-radius: 6px; border: 1px solid #333; pointer-events: none;
+      border-radius: 6px; border: 1px solid #333;
     }
 
     #toolbar {
@@ -41,14 +41,70 @@
     .btn.danger:hover {
       background: #3e1616; border-color: #ff4444;
     }
+
+    /* ── Toast notifications ── */
+    #toast-container {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(10, 15, 35, 0.92);
+      border: 1px solid #2a4a8a;
+      color: #a0c4ff;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 7px 16px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+      animation: toastIn 0.25s cubic-bezier(0.16,1,0.3,1),
+                 toastOut 0.35s ease 2.65s forwards;
+    }
+
+    .toast.joined  { border-color: #2a6a3a; color: #80e8a0; }
+    .toast.left    { border-color: #6a3a2a; color: #e89080; }
+    .toast.master  { border-color: #6a5a1a; color: #ffd080; }
+    .toast.asset   { border-color: #2a4a6a; color: #80c8ff; }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1);    }
+    }
+    @keyframes toastOut {
+      to   { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    }
   </style>
 </head>
 <body>
 
 <div id="hud">
-  <strong style="color:#7eb8f7">D3D MVP</strong><br/>
-  <span id="room-code" style="color:#4a8aff; letter-spacing:2px;"></span><br/>
-  <span id="pos-display">Pos: (0, 0, 0)</span>
+  <strong style="color:#7eb8f7; pointer-events:none;">D3D MVP</strong><br/>
+  <div style="display:flex; align-items:center; gap:6px; margin:2px 0;">
+    <span id="room-code" style="color:#4a8aff; letter-spacing:2px; pointer-events:none;"></span>
+    <button id="btn-copy-code" onclick="
+      navigator.clipboard.writeText(document.getElementById('room-code').textContent.replace('🎲 ',''));
+      this.textContent='✓';
+      setTimeout(()=>this.textContent='⧉',1200);
+    " style="
+      background:transparent; border:1px solid #2a4a8a; color:#4a8aff;
+      border-radius:4px; padding:1px 5px; font-size:10px;
+      cursor:pointer; transition:all 0.2s;
+    ">⧉</button>
+  </div>
+  <span id="pos-display" style="pointer-events:none;">Pos: (0, 0, 0)</span>
+  <div style="margin-top:8px; border-top:1px solid #222; padding-top:6px; pointer-events:none;">
+    <div style="color:#4a6a8a; font-size:11px; margin-bottom:4px; letter-spacing:1px;">ONLINE</div>
+    <div id="players-list" style="display:flex; flex-direction:column; gap:3px;"></div>
+  </div>
 </div>
 
 <!-- Painel de transformação -->
@@ -107,6 +163,8 @@
 <!-- Inputs de arquivo ocultos -->
 <input type="file" id="input-map" accept=".glb,.gltf" style="display:none" />
 <input type="file" id="input-token" accept=".png,.jpg,.jpeg,.webp,.glb,.gltf" style="display:none" />
+
+<div id="toast-container"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 
